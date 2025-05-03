@@ -1,10 +1,50 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { api } from '../../services/api';
 import './Header.css';
 import logo from '../../assets/images/logo.png';
 import phoneIcon from '../../assets/icons/phone.png';
 
 const Header = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setIsLoggedIn(false);
+        setIsAdmin(false);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const user = await api.get('/users/me');
+        setIsLoggedIn(true);
+        setIsAdmin(user.role === 'admin');
+      } catch (error) {
+        console.error('Error checking auth status:', error);
+        localStorage.removeItem('token');
+        setIsLoggedIn(false);
+        setIsAdmin(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setIsLoggedIn(false);
+    setIsAdmin(false);
+    navigate('/');
+  };
+
   return (
     <header className="header">
       <div className="header-content">
@@ -38,9 +78,30 @@ const Header = () => {
             </a>
           </div>
         </div>
-        <div className="auth">
-          <Link to="/login" className="login-btn">Вход</Link>
-          <Link to="/register" className="register-btn">Регистрация</Link>
+        <div className="auth-buttons">
+          {!isLoading && (
+            isLoggedIn ? (
+              <>
+                {isAdmin && (
+                  <Link to="/admin" className="auth-button admin">
+                    Админ панель
+                  </Link>
+                )}
+                <button onClick={handleLogout} className="auth-button logout">
+                  Выйти
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" className="auth-button">
+                  Войти
+                </Link>
+                <Link to="/register" className="auth-button">
+                  Регистрация
+                </Link>
+              </>
+            )
+          )}
         </div>
       </div>
     </header>

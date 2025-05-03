@@ -3,42 +3,41 @@ import './StatsSection.css';
 import doctorIcon from '../../assets/icons/doctor.png';
 import patientIcon from '../../assets/icons/patient.png';
 import biometricsIcon from '../../assets/icons/biometrics.png';
+import { api } from '../../services/api';
 
 const StatsSection = () => {
   const [doctorsCount, setDoctorsCount] = useState(0);
   const [patientsCount, setPatientsCount] = useState(0);
   const [biometricsCount, setBiometricsCount] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  // Фиктивные данные (позже заменим на реальные из БД)
-  const targetValues = {
-    doctors: 127,
-    patients: 842,
-    biometrics: 35600
-  };
+  // Фиктивные данные для биометрии
+  const biometricsValue = 35600;
 
-  // Анимация увеличения чисел
   useEffect(() => {
-    const duration = 2000; // 2 секунды на анимацию
-    const step = 20; // Частота обновления (мс)
-    
-    const animateValue = (setValue, target) => {
-      let start = 0;
-      const increment = target / (duration / step);
-      
-      const timer = setInterval(() => {
-        start += increment;
-        if (start >= target) {
-          setValue(target);
-          clearInterval(timer);
-        } else {
-          setValue(Math.floor(start));
-        }
-      }, step);
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [patientsData, doctorsData] = await Promise.all([
+          api.get('/users?role=patient'),
+          api.get('/users?role=doctor')
+        ]);
+        
+        setPatientsCount(patientsData.length);
+        setDoctorsCount(doctorsData.length);
+        setBiometricsCount(biometricsValue);
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+        // В случае ошибки показываем фиктивные данные
+        setPatientsCount(842);
+        setDoctorsCount(127);
+        setBiometricsCount(biometricsValue);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    animateValue(setDoctorsCount, targetValues.doctors);
-    animateValue(setPatientsCount, targetValues.patients);
-    animateValue(setBiometricsCount, targetValues.biometrics);
+    fetchData();
   }, []);
 
   return (

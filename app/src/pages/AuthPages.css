@@ -110,6 +110,16 @@
   text-decoration: underline;
 }
 
+.error-message {
+  background-color: #fee2e2;
+  color: #dc2626;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  text-align: center;
+}
+
 @media (max-width: 480px) {
   .auth-card {
     padding: 30px 20px;

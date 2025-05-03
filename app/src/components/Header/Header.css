@@ -1,163 +1,176 @@
 .header {
-  background-color: #f0f7ff;
-  padding: 15px 0;
+  background-color: #ffffff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 1rem 0;
 }
 
 .header-content {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 2rem;
 }
 
 .logo {
-  text-decoration: none;
-  color: #1a365d;
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 1rem;
+  text-decoration: none;
+  color: #1a365d;
 }
 
 .logo-image {
-  width: 100px;
+  width: 60px;
   height: auto;
-  object-fit: contain;
 }
 
 .logo-text {
-  font-size: 16px;
-  font-weight: 500;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  font-size: 0.9rem;
+  line-height: 1.2;
 }
 
 .logo-text div {
-  line-height: 1.2;
+  font-weight: 500;
 }
 
 .vertical-divider {
   width: 1px;
   height: 60px;
   background-color: rgba(59, 130, 246, 0.2);
-  margin: 0 20px;
+  margin: 0 1rem;
 }
 
 .motto {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  font-size: 16px;
-  color: #1a365d;
-  font-weight: 500;
+  font-size: 0.9rem;
+  line-height: 1.2;
 }
 
 .motto div {
-  line-height: 1.2;
+  font-weight: 500;
 }
 
 .contacts {
   display: flex;
-  gap: 20px;
+  gap: 2rem;
 }
 
 .contact-item {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  gap: 0.25rem;
 }
 
 .contact-item div {
-  font-size: 13px;
+  font-size: 0.8rem;
   color: #4b5563;
 }
 
 .contact-item a {
-  font-size: 15px;
-  font-weight: 600;
-  color: #1a365d;
-  text-decoration: none;
   display: flex;
   align-items: center;
-  gap: 8px;
-}
-
-.phone-icon {
-  width: 16px;
-  height: 16px;
-  object-fit: contain;
+  gap: 0.5rem;
+  color: #1a365d;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s;
 }
 
 .contact-item a:hover {
   color: #3b82f6;
 }
 
-.auth {
+.phone-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.auth-buttons {
   display: flex;
-  gap: 10px;
+  gap: 0.5rem;
 }
 
-.login-btn, .register-btn {
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 14px;
+.auth-button {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
   font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
   text-decoration: none;
-}
-
-.login-btn {
-  background-color: transparent;
-  color: #3b82f6;
-  border: 1px solid #3b82f6;
-}
-
-.register-btn {
-  background-color: #3b82f6;
-  color: white;
+  transition: all 0.3s;
   border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
 }
 
-.login-btn:hover {
-  background-color: rgba(59, 130, 246, 0.1);
+.auth-button:not(.admin):not(.logout) {
+  background-color: #007bff;
+  color: white;
 }
 
-.register-btn:hover {
-  background-color: #2563eb;
+.auth-button:not(.admin):not(.logout):hover {
+  background-color: #0056b3;
+}
+
+.auth-button.admin {
+  background-color: #28a745;
+  color: white;
+}
+
+.auth-button.admin:hover {
+  background-color: #218838;
+}
+
+.auth-button.logout {
+  background-color: #dc3545;
+  color: white;
+}
+
+.auth-button.logout:hover {
+  background-color: #c82333;
+}
+
+@media (max-width: 1024px) {
+  .header-content {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .contacts {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 @media (max-width: 768px) {
   .header-content {
     flex-direction: column;
-    gap: 15px;
+    align-items: center;
+    text-align: center;
   }
 
   .logo {
     flex-direction: column;
-    align-items: center;
-    text-align: center;
+    gap: 0.5rem;
   }
 
   .vertical-divider {
     width: 100%;
     height: 1px;
-    margin: 10px 0;
-  }
-
-  .motto {
-    text-align: center;
+    margin: 0.5rem 0;
   }
 
   .contacts {
     flex-direction: column;
-    gap: 10px;
+    gap: 1rem;
   }
 
-  .auth {
+  .auth-buttons {
     width: 100%;
     justify-content: center;
   }

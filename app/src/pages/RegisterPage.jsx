@@ -1,59 +1,106 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { api } from '../services/api';
 import './AuthPages.css';
 
 const RegisterPage = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    first_name: '',
+    last_name: '',
     email: '',
     phone: '',
     password: '',
     confirmPassword: '',
   });
+  const [errors, setErrors] = useState({});
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.first_name) newErrors.first_name = 'Имя обязательно для заполнения';
+    if (!formData.last_name) newErrors.last_name = 'Фамилия обязательна для заполнения';
+    if (!formData.email) newErrors.email = 'Email обязателен для заполнения';
+    if (!formData.phone) newErrors.phone = 'Телефон обязателен для заполнения';
+    if (!formData.password) newErrors.password = 'Пароль обязателен для заполнения';
+    if (formData.password.length < 6) newErrors.password = 'Пароль должен содержать минимум 6 символов';
+    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Пароли не совпадают';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Введите корректный email';
+    if (!/^\+?[0-9]{10,15}$/.test(formData.phone.replace(/\D/g, ''))) newErrors.phone = 'Введите корректный номер телефона';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Здесь будет логика регистрации
-    console.log('Register data:', formData);
+    setError('');
+    setErrors({});
+    setIsLoading(true);
+
+    if (!validateForm()) {
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const response = await api.register({
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
+      });
+      localStorage.setItem('token', response.access_token);
+      // Принудительно перезагружаем страницу для обновления состояния Header
+      window.location.href = '/';
+    } catch (error) {
+      setError(error.message || 'Ошибка при регистрации');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="auth-container">
       <div className="auth-card">
         <h2>Регистрация</h2>
+        {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
-            <label htmlFor="firstName">Имя</label>
+            <label htmlFor="first_name">Имя</label>
             <input
               type="text"
-              id="firstName"
-              name="firstName"
-              value={formData.firstName}
+              id="first_name"
+              name="first_name"
+              value={formData.first_name}
               onChange={handleChange}
               required
-              placeholder="Введите ваше имя"
+              disabled={isLoading}
             />
+            {errors.first_name && <span className="error">{errors.first_name}</span>}
           </div>
           <div className="form-group">
-            <label htmlFor="lastName">Фамилия</label>
+            <label htmlFor="last_name">Фамилия</label>
             <input
               type="text"
-              id="lastName"
-              name="lastName"
-              value={formData.lastName}
+              id="last_name"
+              name="last_name"
+              value={formData.last_name}
               onChange={handleChange}
               required
-              placeholder="Введите вашу фамилию"
+              disabled={isLoading}
             />
+            {errors.last_name && <span className="error">{errors.last_name}</span>}
           </div>
           <div className="form-group">
             <label htmlFor="email">Email</label>
@@ -64,8 +111,9 @@ const RegisterPage = () => {
               value={formData.email}
               onChange={handleChange}
               required
-              placeholder="Введите ваш email"
+              disabled={isLoading}
             />
+            {errors.email && <span className="error">{errors.email}</span>}
           </div>
           <div className="form-group">
             <label htmlFor="phone">Телефон</label>
@@ -76,8 +124,10 @@ const RegisterPage = () => {
               value={formData.phone}
               onChange={handleChange}
               required
-              placeholder="Введите ваш телефон"
+              disabled={isLoading}
+              placeholder="+7 (XXX) XXX-XX-XX"
             />
+            {errors.phone && <span className="error">{errors.phone}</span>}
           </div>
           <div className="form-group">
             <label htmlFor="password">Пароль</label>
@@ -88,11 +138,12 @@ const RegisterPage = () => {
               value={formData.password}
               onChange={handleChange}
               required
-              placeholder="Придумайте пароль"
+              disabled={isLoading}
             />
+            {errors.password && <span className="error">{errors.password}</span>}
           </div>
           <div className="form-group">
-            <label htmlFor="confirmPassword">Подтвердите пароль</label>
+            <label htmlFor="confirmPassword">Подтверждение пароля</label>
             <input
               type="password"
               id="confirmPassword"
@@ -100,14 +151,17 @@ const RegisterPage = () => {
               value={formData.confirmPassword}
               onChange={handleChange}
               required
-              placeholder="Повторите пароль"
+              disabled={isLoading}
             />
+            {errors.confirmPassword && <span className="error">{errors.confirmPassword}</span>}
           </div>
-          <button type="submit" className="auth-button">Зарегистрироваться</button>
-          <div className="auth-links">
-            <span>Уже есть аккаунт? <Link to="/login">Войти</Link></span>
-          </div>
+          <button type="submit" className="submit-button" disabled={isLoading}>
+            {isLoading ? 'Регистрация...' : 'Зарегистрироваться'}
+          </button>
         </form>
+        <div className="auth-links">
+          <Link to="/login">Уже есть аккаунт? Войти</Link>
+        </div>
       </div>
     </div>
   );
