@@ -1,0 +1,128 @@
+.services-section {
+  padding: 40px 0 80px 0;
+  background-color: #f0f7ff;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.section-title {
+  text-align: center;
+  font-size: 2.5rem;
+  margin-bottom: 50px;
+  color: #1a365d;
+  font-weight: 600;
+  position: relative;
+  padding-bottom: 15px;
+}
+
+.section-title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+}
+
+.service-card {
+  background: white;
+  border-radius: 15px;
+  padding: 30px;
+  box-shadow: 0 10px 20px rgba(59, 130, 246, 0.1);
+  transition: all 0.3s ease;
+  text-align: center;
+  border: 1px solid rgba(59, 130, 246, 0.1);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.service-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+}
+
+.service-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(59, 130, 246, 0.15);
+}
+
+.service-icon {
+  font-size: 2.5rem;
+  color: #3b82f6;
+  margin-bottom: 20px;
+  transition: transform 0.3s ease;
+}
+
+.service-card:hover .service-icon {
+  transform: scale(1.1);
+}
+
+.service-title {
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+  color: #1a365d;
+  font-weight: 600;
+}
+
+.service-description {
+  color: #4b5563;
+  margin-bottom: 25px;
+  line-height: 1.6;
+  font-size: 1rem;
+  flex-grow: 1;
+}
+
+.service-button {
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  font-size: 1rem;
+  position: relative;
+  overflow: hidden;
+  margin-top: auto;
+}
+
+.service-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: 0.5s;
+}
+
+.service-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
+}
+
+.service-button:hover::before {
+  left: 100%;
+} 

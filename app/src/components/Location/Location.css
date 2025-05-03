@@ -1,0 +1,145 @@
+.location-section {
+  padding: 20px 0;
+  background-color: #f0f7ff;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.section-title {
+  text-align: center;
+  font-size: 2.5rem;
+  color: #1a365d;
+  margin-bottom: 20px;
+  font-weight: 600;
+  position: relative;
+  padding-bottom: 15px;
+}
+
+.section-title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+}
+
+.location-content {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 30px;
+  background: white;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 10px 20px rgba(59, 130, 246, 0.1);
+}
+
+.map-container {
+  width: 100%;
+  height: 400px;
+}
+
+.location-info {
+  padding: 30px;
+  background: white;
+}
+
+.location-info h3 {
+  font-size: 1.5rem;
+  color: #1a365d;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+.location-info p {
+  color: #4b5563;
+  margin-bottom: 10px;
+  line-height: 1.6;
+}
+
+.contact-details {
+  margin-top: 30px;
+}
+
+.contact-item {
+  margin-bottom: 20px;
+}
+
+.contact-item h4 {
+  font-size: 1.1rem;
+  color: #1a365d;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.location {
+  padding: 60px 0;
+  background-color: #f0f7ff;
+}
+
+.location h2 {
+  text-align: center;
+  color: #1a365d;
+  margin-bottom: 30px;
+  font-size: 28px;
+}
+
+.map-container {
+  position: relative;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.location-marker {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+
+.marker-icon {
+  font-size: 32px;
+  margin-bottom: 5px;
+}
+
+.marker-text {
+  background-color: white;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-weight: 600;
+  color: #1a365d;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 768px) {
+  .location-content {
+    grid-template-columns: 1fr;
+  }
+
+  .map-container {
+    height: 300px;
+  }
+
+  .location-info {
+    padding: 20px;
+  }
+
+  .location {
+    padding: 40px 0;
+  }
+
+  .location h2 {
+    font-size: 24px;
+  }
+} 
