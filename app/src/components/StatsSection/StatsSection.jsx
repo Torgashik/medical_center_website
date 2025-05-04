@@ -20,7 +20,7 @@ const StatsSection = () => {
         setLoading(true);
         const [patientsData, doctorsData] = await Promise.all([
           api.get('/users?role=patient'),
-          api.get('/users?role=doctor')
+          api.get('/doctors')
         ]);
         
         setPatientsCount(patientsData.length);
