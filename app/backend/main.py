@@ -21,7 +21,9 @@ origins = [
     "http://localhost:50998",
     "http://127.0.0.1:50998",
     "http://localhost:3000",
-    "http://127.0.0.1:3000"
+    "http://127.0.0.1:3000",
+    "http://localhost:8001",
+    "http://127.0.0.1:8001"
 ]
 
 app.add_middleware(
@@ -992,4 +994,79 @@ async def delete_user(user_id: int, current_user: dict = Depends(get_current_use
         print(f"Error deleting user: {str(e)}")
         conn.rollback()
         conn.close()
-        raise HTTPException(status_code=500, detail=str(e)) 
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/users/me/photo")
+async def update_user_photo(
+    photo: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    # Validate file type
+    if not photo.content_type.startswith('image/'):
+        raise HTTPException(status_code=400, detail="File must be an image")
+    
+    # Generate unique filename
+    file_extension = os.path.splitext(photo.filename)[1]
+    filename = f"{current_user['id']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}{file_extension}"
+    file_path = UPLOAD_DIR / filename
+    
+    # Save file
+    try:
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(photo.file, buffer)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error saving file: {str(e)}")
+    
+    # Update database
+    conn = sqlite3.connect('clinic.db')
+    cursor = conn.cursor()
+    
+    try:
+        # Delete old photo if exists
+        cursor.execute("SELECT photo FROM users WHERE id = ?", (current_user["id"],))
+        old_photo = cursor.fetchone()[0]
+        if old_photo:
+            old_photo_path = UPLOAD_DIR / old_photo
+            if old_photo_path.exists():
+                old_photo_path.unlink()
+        
+        # Update user's photo in database with full path
+        photo_path = f"/uploads/{filename}"
+        cursor.execute(
+            "UPDATE users SET photo = ? WHERE id = ?",
+            (photo_path, current_user["id"])
+        )
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=f"Error updating database: {str(e)}")
+    finally:
+        conn.close()
+    
+    return {"photo": photo_path}
+
+@app.get("/stats")
+async def get_stats(current_user: dict = Depends(get_current_user)):
+    conn = sqlite3.connect('clinic.db')
+    cursor = conn.cursor()
+    
+    try:
+        # Get doctors count
+        cursor.execute("SELECT COUNT(*) FROM doctors")
+        doctors_count = cursor.fetchone()[0]
+        
+        # Get patients count
+        cursor.execute("SELECT COUNT(*) FROM users WHERE role = 'patient'")
+        patients_count = cursor.fetchone()[0]
+        
+        # For now, we'll use a fixed value for biometrics
+        # In a real application, this would come from a biometrics table
+        biometrics_count = 35600
+        
+        return {
+            "doctors": doctors_count,
+            "patients": patients_count,
+            "biometrics": biometrics_count
+        }
+    finally:
+        conn.close() 

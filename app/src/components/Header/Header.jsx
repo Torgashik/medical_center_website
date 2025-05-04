@@ -8,6 +8,7 @@ import phoneIcon from '../../assets/icons/phone.png';
 const Header = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isPatient, setIsPatient] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -17,6 +18,7 @@ const Header = () => {
       if (!token) {
         setIsLoggedIn(false);
         setIsAdmin(false);
+        setIsPatient(false);
         setIsLoading(false);
         return;
       }
@@ -25,11 +27,13 @@ const Header = () => {
         const user = await api.get('/users/me');
         setIsLoggedIn(true);
         setIsAdmin(user.role === 'admin');
+        setIsPatient(user.role === 'patient');
       } catch (error) {
         console.error('Error checking auth status:', error);
         localStorage.removeItem('token');
         setIsLoggedIn(false);
         setIsAdmin(false);
+        setIsPatient(false);
       } finally {
         setIsLoading(false);
       }
@@ -42,6 +46,7 @@ const Header = () => {
     localStorage.removeItem('token');
     setIsLoggedIn(false);
     setIsAdmin(false);
+    setIsPatient(false);
     navigate('/');
   };
 
@@ -85,6 +90,11 @@ const Header = () => {
                 {isAdmin && (
                   <Link to="/admin" className="auth-button admin">
                     Админ панель
+                  </Link>
+                )}
+                {isPatient && (
+                  <Link to="/personal-account" className="auth-button">
+                    Личный кабинет
                   </Link>
                 )}
                 <button onClick={handleLogout} className="auth-button logout">

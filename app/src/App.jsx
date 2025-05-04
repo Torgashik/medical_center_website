@@ -9,6 +9,7 @@ import Footer from './components/Footer/Footer';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AdminDashboard from './pages/AdminDashboard';
+import PersonalAccount from './pages/PersonalAccount';
 import './App.css';
 
 const ProtectedRoute = ({ children }) => {
@@ -40,6 +41,14 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/personal-account"
+            element={
+              <ProtectedRoute>
+                <PersonalAccount />
               </ProtectedRoute>
             }
           />
