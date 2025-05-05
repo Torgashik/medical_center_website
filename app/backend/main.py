@@ -17,12 +17,12 @@ from sqlalchemy.orm import Session
 app = FastAPI()
 
 origins = [
-    "http://localhost:50998",
-    "http://127.0.0.1:50998",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:8001",
-    "http://127.0.0.1:8001"
+    "http://78.24.223.206:50998",
+    "http://78.24.223.206:50998",
+    "http://78.24.223.206:3000",
+    "http://78.24.223.206:3000",
+    "http://78.24.223.206:8001",
+    "http://78.24.223.206:8001"
 ]
 
 app.add_middleware(
