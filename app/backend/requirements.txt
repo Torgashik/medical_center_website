@@ -6,3 +6,4 @@ passlib[bcrypt]==1.7.4
 python-dotenv==1.0.0
 sqlalchemy==2.0.23
 pydantic==2.4.2 
+PyJWT>=2.0.0
