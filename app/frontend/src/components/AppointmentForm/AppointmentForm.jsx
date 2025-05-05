@@ -23,7 +23,7 @@ const AppointmentForm = () => {
         return;
       }
 
-      const response = await axios.get('http://localhost:8001/services', {
+      const response = await axios.get('http://78.24.223.206:8001/services', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setServices(response.data);
@@ -38,7 +38,7 @@ const AppointmentForm = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await axios.get('http://localhost:8001/appointments/patient', {
+      const response = await axios.get('http://78.24.223.206:8001/appointments/patient', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setPatientAppointments(response.data);
@@ -60,7 +60,7 @@ const AppointmentForm = () => {
       }
 
       const response = await axios.post(
-        'http://localhost:8001/appointments',
+        'http://78.24.223.206:8001/appointments',
         {
           service_id: selectedService,
           appointment_date: appointmentDate

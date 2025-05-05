@@ -73,7 +73,7 @@ const PersonalAccount = () => {
         <div className="photo-section">
           <div className="photo-wrapper">
             <img
-              src={userData?.photo ? `http://localhost:8001${userData.photo}` : '/default-doctor.png'}
+              src={userData?.photo ? `http://78.24.223.206:8001${userData.photo}` : '/default-doctor.png'}
               alt="Фото профиля"
               className="profile-photo"
               onError={(e) => {

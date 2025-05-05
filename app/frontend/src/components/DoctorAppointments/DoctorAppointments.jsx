@@ -10,7 +10,7 @@ const DoctorAppointments = () => {
     const fetchAppointments = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get('http://localhost:8001/appointments/doctor', {
+        const response = await axios.get('http://78.24.223.206:8001/appointments/doctor', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -28,7 +28,7 @@ const DoctorAppointments = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.put(
-        `http://localhost:8001/appointments/${appointmentId}/accept`,
+        `http://78.24.223.206:8001/appointments/${appointmentId}/accept`,
         {},
         {
           headers: {
@@ -38,7 +38,7 @@ const DoctorAppointments = () => {
       );
       setMessage('Запись успешно принята!');
       // Обновляем список записей
-      const response = await axios.get('http://localhost:8001/appointments/doctor', {
+      const response = await axios.get('http://78.24.223.206:8001/appointments/doctor', {
         headers: {
           Authorization: `Bearer ${token}`,
         },

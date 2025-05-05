@@ -88,7 +88,7 @@ const Services = () => {
 
     const fetchServices = async (token) => {
         try {
-            const response = await axios.get('http://localhost:8001/services', {
+            const response = await axios.get('http://78.24.223.206:8001/services', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setServices(response.data);
