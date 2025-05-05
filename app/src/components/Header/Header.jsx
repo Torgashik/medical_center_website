@@ -9,6 +9,7 @@ const Header = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isPatient, setIsPatient] = useState(false);
+  const [isDoctor, setIsDoctor] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -19,6 +20,7 @@ const Header = () => {
         setIsLoggedIn(false);
         setIsAdmin(false);
         setIsPatient(false);
+        setIsDoctor(false);
         setIsLoading(false);
         return;
       }
@@ -28,12 +30,14 @@ const Header = () => {
         setIsLoggedIn(true);
         setIsAdmin(user.role === 'admin');
         setIsPatient(user.role === 'patient');
+        setIsDoctor(user.role === 'doctor');
       } catch (error) {
         console.error('Error checking auth status:', error);
         localStorage.removeItem('token');
         setIsLoggedIn(false);
         setIsAdmin(false);
         setIsPatient(false);
+        setIsDoctor(false);
       } finally {
         setIsLoading(false);
       }
@@ -47,6 +51,7 @@ const Header = () => {
     setIsLoggedIn(false);
     setIsAdmin(false);
     setIsPatient(false);
+    setIsDoctor(false);
     navigate('/');
   };
 
@@ -93,8 +98,18 @@ const Header = () => {
                   </Link>
                 )}
                 {isPatient && (
-                  <Link to="/personal-account" className="auth-button">
-                    Личный кабинет
+                  <>
+                    <Link to="/appointments" className="auth-button">
+                      Записаться на приём
+                    </Link>
+                    <Link to="/personal-account" className="auth-button">
+                      Личный кабинет
+                    </Link>
+                  </>
+                )}
+                {isDoctor && (
+                  <Link to="/doctor-appointments" className="auth-button">
+                    Приёмы
                   </Link>
                 )}
                 <button onClick={handleLogout} className="auth-button logout">

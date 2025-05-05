@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/Header/Header';
 import Carousel from './components/Carousel/Carousel';
@@ -10,17 +10,40 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AdminDashboard from './pages/AdminDashboard';
 import PersonalAccount from './pages/PersonalAccount';
+import AppointmentForm from './components/AppointmentForm/AppointmentForm';
+import DoctorAppointments from './components/DoctorAppointments/DoctorAppointments';
 import './App.css';
 
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ children, allowedRoles }) => {
   const token = localStorage.getItem('token');
   if (!token) {
     return <Navigate to="/login" />;
   }
+
+  // Get user role from token
+  const userRole = JSON.parse(atob(token.split('.')[1])).role;
+  if (allowedRoles && !allowedRoles.includes(userRole)) {
+    return <Navigate to="/" />;
+  }
+
   return children;
 };
 
 const App = () => {
+  const [userRole, setUserRole] = useState(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const decoded = JSON.parse(atob(token.split('.')[1]));
+        setUserRole(decoded.role);
+      } catch (error) {
+        console.error('Error decoding token:', error);
+      }
+    }
+  }, []);
+
   return (
     <div className="app">
       <Header />
@@ -39,7 +62,7 @@ const App = () => {
           <Route
             path="/admin"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin']}>
                 <AdminDashboard />
               </ProtectedRoute>
             }
@@ -49,6 +72,22 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <PersonalAccount />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/appointments"
+            element={
+              <ProtectedRoute allowedRoles={['patient']}>
+                <AppointmentForm />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/doctor-appointments"
+            element={
+              <ProtectedRoute allowedRoles={['doctor']}>
+                <DoctorAppointments />
               </ProtectedRoute>
             }
           />

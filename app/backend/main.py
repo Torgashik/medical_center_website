@@ -16,7 +16,6 @@ from sqlalchemy.orm import Session
 
 app = FastAPI()
 
-# CORS configuration
 origins = [
     "http://localhost:50998",
     "http://127.0.0.1:50998",
@@ -35,26 +34,25 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
-# Add middleware to log CORS headers
 @app.middleware("http")
 async def add_cors_headers(request: Request, call_next):
     response = await call_next(request)
-    response.headers["Access-Control-Allow-Origin"] = request.headers.get("origin", "*")
+    origin = request.headers.get("origin")
+    if origin in origins:
+        response.headers["Access-Control-Allow-Origin"] = origin
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
     response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept"
     response.headers["Access-Control-Allow-Credentials"] = "true"
     response.headers["Access-Control-Expose-Headers"] = "*"
     return response
 
-# Create uploads directory if it doesn't exist
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
 DEFAULT_PHOTO = "default_doctor.png"
 
-# Mount static files directory
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
-# Add cache control headers for static files
+
 @app.middleware("http")
 async def add_cache_control(request: Request, call_next):
     response = await call_next(request)
@@ -64,20 +62,16 @@ async def add_cache_control(request: Request, call_next):
         response.headers["Expires"] = "0"
     return response
 
-# JWT configuration
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-here")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-# Security
 security = HTTPBearer()
 
-# Database initialization
 def init_db():
     conn = sqlite3.connect('clinic.db')
     cursor = conn.cursor()
-    
-    # Create users table
+
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -91,15 +85,13 @@ def init_db():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     ''')
-    
-    # Check if photo column exists, if not add it
+
     cursor.execute("PRAGMA table_info(users)")
     columns = [column[1] for column in cursor.fetchall()]
     if 'photo' not in columns:
         print("Adding photo column to users table")
         cursor.execute("ALTER TABLE users ADD COLUMN photo TEXT")
-    
-    # Check if admin user exists
+
     cursor.execute("SELECT id FROM users WHERE email = ? AND role = ?", ("admin@clinic.com", "admin"))
     admin_exists = cursor.fetchone()
     
@@ -112,7 +104,7 @@ def init_db():
         ''', ("Admin", "Admin", "admin@clinic.com", "+79999999999", admin_password, "admin"))
         print("Admin user created successfully")
     
-    # Create doctors table
+
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS doctors (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -127,7 +119,49 @@ def init_db():
     )
     ''')
     
-    # Log table structure
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS appointments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        patient_id INTEGER NOT NULL,
+        doctor_id INTEGER,
+        service_id INTEGER NOT NULL,
+        appointment_date TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (patient_id) REFERENCES users(id),
+        FOREIGN KEY (doctor_id) REFERENCES doctors(id)
+    )
+    ''')
+    
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS services (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        description TEXT NOT NULL,
+        price DECIMAL(10, 2) NOT NULL,
+        duration INTEGER NOT NULL,  -- duration in minutes
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    ''')
+    
+    cursor.execute("SELECT COUNT(*) FROM services")
+    if cursor.fetchone()[0] == 0:
+        default_services = [
+            ('Полный check-up организма', 'Комплексное обследование организма с использованием современных методов диагностики для раннего выявления заболеваний', 5000.00, 120),
+            ('Реабилитация после травмы', 'Индивидуальные программы восстановления с использованием передовых методик', 3000.00, 60),
+            ('Реабилитация после covid-19', 'Специализированные программы восстановления дыхательной системы и общего состояния после COVID-19', 2500.00, 60),
+            ('Биометрия', 'Создание цифрового профиля с использованием современных биометрических технологий и систем безопасности', 2000.00, 30),
+            ('Диспансеризация', 'Комплексное профилактическое обследование с использованием современных методов диагностики и анализов', 4000.00, 90),
+            ('Женское здоровье', 'Комплексное обследование и лечение с использованием современных методик и специализированного оборудования', 3500.00, 60),
+            ('Томография', 'Современные методы диагностики с использованием высокоточного оборудования и передовых технологий', 4500.00, 45),
+            ('Коррекция зрения', 'Комплексная диагностика и коррекция зрения с использованием современных методик и оборудования', 2800.00, 45),
+            ('Стоматология', 'Комплексное лечение и профилактика с использованием современных технологий и материалов', 3200.00, 60)
+        ]
+        cursor.executemany('''
+        INSERT INTO services (title, description, price, duration)
+        VALUES (?, ?, ?, ?)
+        ''', default_services)
+    
     cursor.execute("PRAGMA table_info(doctors)")
     columns = cursor.fetchall()
     print("Doctors table structure:")
@@ -137,12 +171,10 @@ def init_db():
     conn.commit()
     conn.close()
 
-# Initialize database on startup
 @app.on_event("startup")
 async def startup_event():
     init_db()
 
-# Pydantic models
 class UserCreate(BaseModel):
     first_name: str
     last_name: str
@@ -197,7 +229,30 @@ class Doctor(BaseModel):
     experience: int
     specializations: list[str]
 
-# Helper functions
+class AppointmentCreate(BaseModel):
+    service_id: int
+    appointment_date: str
+
+class Appointment(BaseModel):
+    id: int
+    patient_id: int
+    doctor_id: Optional[int]
+    service_id: int
+    appointment_date: str
+    status: str
+    created_at: str
+    patient_name: Optional[str] = None
+    doctor_name: Optional[str] = None
+    service_title: Optional[str] = None
+
+class Service(BaseModel):
+    id: int
+    title: str
+    description: str
+    price: float
+    duration: int
+    created_at: Optional[str] = None
+
 def create_access_token(data: dict):
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -251,10 +306,8 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         print(f"Unexpected error in get_current_user: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# Routes
 @app.get("/users/me", response_model=User)
 async def read_users_me(current_user: dict = Depends(get_current_user)):
-    # Convert datetime to string if it exists
     if current_user.get("created_at"):
         current_user["created_at"] = str(current_user["created_at"])
     return current_user
@@ -295,7 +348,6 @@ async def register(user: UserCreate):
     cursor = conn.cursor()
     
     try:
-        # Check if user already exists
         cursor.execute("SELECT id FROM users WHERE email = ?", (user.email,))
         if cursor.fetchone():
             print("Email already registered")
@@ -305,10 +357,8 @@ async def register(user: UserCreate):
                 detail="Email already registered"
             )
         
-        # Hash password
         password_hash = hashlib.sha256(user.password.encode()).hexdigest()
         
-        # Insert new user with role based on email
         role = "admin" if user.email == "admin@clinic.com" else "patient"
         cursor.execute('''
         INSERT INTO users (first_name, last_name, email, phone, password_hash, role)
@@ -319,7 +369,6 @@ async def register(user: UserCreate):
         conn.commit()
         print(f"User created successfully with ID: {user_id}")
         
-        # Create access token
         access_token = create_access_token({"sub": str(user_id), "role": role})
         print("=== END REGISTRATION ===\n")
         return {"access_token": access_token, "token_type": "bearer"}
@@ -335,7 +384,6 @@ async def login(user: UserLogin):
     conn = sqlite3.connect('clinic.db')
     cursor = conn.cursor()
     
-    # Get user
     cursor.execute("SELECT id, password_hash, role FROM users WHERE email = ?", (user.email,))
     result = cursor.fetchone()
     conn.close()
@@ -354,7 +402,6 @@ async def login(user: UserLogin):
             content={"detail": "Invalid credentials"}
         )
     
-    # Create access token
     access_token = create_access_token({"sub": str(user_id), "role": role})
     return {"access_token": access_token, "token_type": "bearer"}
 
@@ -380,7 +427,6 @@ async def create_doctor(
     cursor = conn.cursor()
     
     try:
-        # Create user first
         password_hash = hashlib.sha256(password.encode()).hexdigest()
         cursor.execute('''
         INSERT INTO users (first_name, last_name, email, phone, password_hash, role)
@@ -390,15 +436,12 @@ async def create_doctor(
         user_id = cursor.lastrowid
         print(f"Created user with ID: {user_id}")
         
-        # Handle photo upload
         photo_path = f"/uploads/{DEFAULT_PHOTO}"  # Путь к дефолтной фотографии
         if photo:
-            # Generate unique filename
             file_extension = os.path.splitext(photo.filename)[1]
             filename = f"doctor_{user_id}{file_extension}"
             photo_path = f"/uploads/{filename}"  # Путь к загруженной фотографии
             
-            # Save the file
             full_path = UPLOAD_DIR / filename
             print(f"Attempting to save photo to: {full_path}")
             print(f"Current working directory: {os.getcwd()}")
@@ -412,16 +455,11 @@ async def create_doctor(
             print(f"File size: {full_path.stat().st_size} bytes")
             print(f"Photo path in database: {photo_path}")
         
-        # Обработка специализаций
         specializations = specializations.replace('[', '').replace(']', '').replace('"', '').replace('\\', '')
-        # Разбиение на список и очистка каждой специализации
         specializations_list = [spec.strip() for spec in specializations.split(',')]
-        # Удаляем пустые строки и дубликаты
         specializations_list = list(dict.fromkeys([spec for spec in specializations_list if spec]))
-        # Сбор обратно в строку
         specializations = ','.join(specializations_list)
         
-        # Create doctor record
         cursor.execute('''
         INSERT INTO doctors (user_id, position, qualification, age, experience, specializations, photo)
         VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -1068,5 +1106,347 @@ async def get_stats(current_user: dict = Depends(get_current_user)):
             "patients": patients_count,
             "biometrics": biometrics_count
         }
+    finally:
+        conn.close()
+
+@app.post("/appointments", response_model=Appointment)
+async def create_appointment(
+    appointment: AppointmentCreate,
+    current_user: dict = Depends(get_current_user)
+):
+    print(f"\n=== START CREATE APPOINTMENT ===")
+    print(f"Current user: {current_user}")
+    print(f"Appointment data: {appointment}")
+    
+    if current_user["role"] != "patient":
+        print("Unauthorized: Only patients can create appointments")
+        raise HTTPException(status_code=403, detail="Only patients can create appointments")
+    
+    conn = sqlite3.connect('clinic.db')
+    cursor = conn.cursor()
+    
+    try:
+        # Verify service exists
+        cursor.execute("SELECT id FROM services WHERE id = ?", (appointment.service_id,))
+        if not cursor.fetchone():
+            print(f"Service with ID {appointment.service_id} not found")
+            raise HTTPException(status_code=404, detail="Service not found")
+        
+        # Create appointment
+        cursor.execute('''
+        INSERT INTO appointments (patient_id, service_id, appointment_date)
+        VALUES (?, ?, ?)
+        ''', (current_user["id"], appointment.service_id, appointment.appointment_date))
+        
+        appointment_id = cursor.lastrowid
+        conn.commit()
+        print(f"Appointment created with ID: {appointment_id}")
+        
+        # Get the created appointment with additional information
+        cursor.execute('''
+        SELECT 
+            a.*,
+            u.first_name || ' ' || u.last_name as patient_name,
+            CASE 
+                WHEN d.id IS NOT NULL THEN du.first_name || ' ' || du.last_name 
+                ELSE NULL 
+            END as doctor_name,
+            s.title as service_title
+        FROM appointments a
+        LEFT JOIN users u ON a.patient_id = u.id
+        LEFT JOIN doctors d ON a.doctor_id = d.id
+        LEFT JOIN users du ON d.user_id = du.id
+        LEFT JOIN services s ON a.service_id = s.id
+        WHERE a.id = ?
+        ''', (appointment_id,))
+        
+        appointment_data = cursor.fetchone()
+        if not appointment_data:
+            print(f"Appointment with ID {appointment_id} not found after creation")
+            raise HTTPException(status_code=404, detail="Appointment not found")
+        
+        result = {
+            "id": appointment_data[0],
+            "patient_id": appointment_data[1],
+            "doctor_id": appointment_data[2],
+            "service_id": appointment_data[3],
+            "appointment_date": appointment_data[4],
+            "status": appointment_data[5],
+            "created_at": appointment_data[6],
+            "patient_name": appointment_data[7],
+            "doctor_name": appointment_data[8],
+            "service_title": appointment_data[9]
+        }
+        
+        print(f"Appointment created successfully: {result}")
+        print("=== END CREATE APPOINTMENT ===\n")
+        return result
+        
+    except sqlite3.Error as e:
+        print(f"Database error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Unexpected error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
+
+@app.get("/appointments/patient", response_model=list[Appointment])
+async def get_patient_appointments(current_user: dict = Depends(get_current_user)):
+    print(f"\n=== START GET PATIENT APPOINTMENTS ===")
+    print(f"Current user: {current_user}")
+    
+    if current_user["role"] != "patient":
+        print("Unauthorized: Only patients can view their appointments")
+        raise HTTPException(status_code=403, detail="Only patients can view their appointments")
+    
+    conn = sqlite3.connect('clinic.db')
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute('''
+        SELECT 
+            a.id,
+            a.patient_id,
+            a.doctor_id,
+            a.service_id,
+            a.appointment_date,
+            a.status,
+            a.created_at,
+            p.first_name || ' ' || p.last_name as patient_name,
+            d.first_name || ' ' || d.last_name as doctor_name,
+            s.title as service_title
+        FROM appointments a
+        LEFT JOIN users p ON a.patient_id = p.id
+        LEFT JOIN doctors doc ON a.doctor_id = doc.id
+        LEFT JOIN users d ON doc.user_id = d.id
+        LEFT JOIN services s ON a.service_id = s.id
+        WHERE a.patient_id = ?
+        ORDER BY a.appointment_date DESC
+        ''', (current_user["id"],))
+        
+        appointments = cursor.fetchall()
+        print(f"Found {len(appointments)} appointments")
+        
+        result = [{
+            "id": a[0],
+            "patient_id": a[1],
+            "doctor_id": a[2],
+            "service_id": a[3],
+            "appointment_date": a[4],
+            "status": a[5],
+            "created_at": a[6],
+            "patient_name": a[7],
+            "doctor_name": a[8],
+            "service_title": a[9]
+        } for a in appointments]
+        
+        print("=== END GET PATIENT APPOINTMENTS ===\n")
+        return result
+        
+    except sqlite3.Error as e:
+        print(f"Database error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Unexpected error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
+
+@app.get("/appointments/doctor", response_model=list[Appointment])
+async def get_doctor_appointments(current_user: dict = Depends(get_current_user)):
+    print(f"\n=== START GET DOCTOR APPOINTMENTS ===")
+    print(f"Current user: {current_user}")
+    
+    if current_user["role"] != "doctor":
+        print("Unauthorized: Only doctors can view their appointments")
+        raise HTTPException(status_code=403, detail="Only doctors can view their appointments")
+    
+    conn = sqlite3.connect('clinic.db')
+    cursor = conn.cursor()
+    
+    try:
+        # First get the doctor's ID
+        cursor.execute("SELECT id FROM doctors WHERE user_id = ?", (current_user["id"],))
+        doctor = cursor.fetchone()
+        if not doctor:
+            print("Doctor profile not found")
+            raise HTTPException(status_code=404, detail="Doctor profile not found")
+        
+        doctor_id = doctor[0]
+        print(f"Found doctor with ID: {doctor_id}")
+        
+        cursor.execute('''
+        SELECT 
+            a.id,
+            a.patient_id,
+            a.doctor_id,
+            a.service_id,
+            a.appointment_date,
+            a.status,
+            a.created_at,
+            p.first_name || ' ' || p.last_name as patient_name,
+            d.first_name || ' ' || d.last_name as doctor_name,
+            s.title as service_title
+        FROM appointments a
+        LEFT JOIN users p ON a.patient_id = p.id
+        LEFT JOIN doctors doc ON a.doctor_id = doc.id
+        LEFT JOIN users d ON doc.user_id = d.id
+        LEFT JOIN services s ON a.service_id = s.id
+        WHERE a.doctor_id = ? OR (a.doctor_id IS NULL AND a.status = 'pending')
+        ORDER BY a.appointment_date DESC
+        ''', (doctor_id,))
+        
+        appointments = cursor.fetchall()
+        print(f"Found {len(appointments)} appointments")
+        
+        result = [{
+            "id": a[0],
+            "patient_id": a[1],
+            "doctor_id": a[2],
+            "service_id": a[3],
+            "appointment_date": a[4],
+            "status": a[5],
+            "created_at": a[6],
+            "patient_name": a[7],
+            "doctor_name": a[8],
+            "service_title": a[9]
+        } for a in appointments]
+        
+        print("=== END GET DOCTOR APPOINTMENTS ===\n")
+        return result
+        
+    except sqlite3.Error as e:
+        print(f"Database error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Unexpected error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
+
+@app.put("/appointments/{appointment_id}/accept")
+async def accept_appointment(
+    appointment_id: int,
+    current_user: dict = Depends(get_current_user)
+):
+    if current_user["role"] != "doctor":
+        raise HTTPException(status_code=403, detail="Only doctors can accept appointments")
+    
+    conn = sqlite3.connect('clinic.db')
+    cursor = conn.cursor()
+    
+    try:
+        # Get the doctor's ID
+        cursor.execute("SELECT id FROM doctors WHERE user_id = ?", (current_user["id"],))
+        doctor = cursor.fetchone()
+        if not doctor:
+            raise HTTPException(status_code=404, detail="Doctor profile not found")
+        
+        doctor_id = doctor[0]
+        
+        # Update the appointment
+        cursor.execute('''
+        UPDATE appointments
+        SET doctor_id = ?, status = 'accepted'
+        WHERE id = ? AND status = 'pending'
+        ''', (doctor_id, appointment_id))
+        
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Appointment not found or already accepted")
+        
+        conn.commit()
+        return {"message": "Appointment accepted successfully"}
+    finally:
+        conn.close()
+
+@app.get("/services", response_model=list[Service])
+async def get_services(current_user: dict = Depends(get_current_user)):
+    print(f"\n=== START GET SERVICES ===")
+    print(f"Current user: {current_user}")
+    
+    conn = sqlite3.connect('clinic.db')
+    cursor = conn.cursor()
+    
+    try:
+        # Check if services table exists and has correct schema
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='services'")
+        table_exists = cursor.fetchone()
+        print(f"Services table exists: {bool(table_exists)}")
+        
+        if table_exists:
+            # Check if price column exists
+            cursor.execute("PRAGMA table_info(services)")
+            columns = [column[1] for column in cursor.fetchall()]
+            if 'price' not in columns:
+                print("Services table exists but has incorrect schema. Dropping and recreating...")
+                cursor.execute("DROP TABLE services")
+                table_exists = False
+        
+        if not table_exists:
+            print("Creating services table...")
+            cursor.execute('''
+            CREATE TABLE services (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                description TEXT NOT NULL,
+                price DECIMAL(10, 2) NOT NULL,
+                duration INTEGER NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            ''')
+            
+            # Insert default services
+            default_services = [
+                ('Полный check-up организма', 'Комплексное обследование организма с использованием современных методов диагностики для раннего выявления заболеваний', 5000.00, 120),
+                ('Реабилитация после травмы', 'Индивидуальные программы восстановления с использованием передовых методик', 3000.00, 60),
+                ('Реабилитация после covid-19', 'Специализированные программы восстановления дыхательной системы и общего состояния после COVID-19', 2500.00, 60),
+                ('Биометрия', 'Создание цифрового профиля с использованием современных биометрических технологий и систем безопасности', 2000.00, 30),
+                ('Диспансеризация', 'Комплексное профилактическое обследование с использованием современных методов диагностики и анализов', 4000.00, 90),
+                ('Женское здоровье', 'Комплексное обследование и лечение с использованием современных методик и специализированного оборудования', 3500.00, 60),
+                ('Томография', 'Современные методы диагностики с использованием высокоточного оборудования и передовых технологий', 4500.00, 45),
+                ('Коррекция зрения', 'Комплексная диагностика и коррекция зрения с использованием современных методик и оборудования', 2800.00, 45),
+                ('Стоматология', 'Комплексное лечение и профилактика с использованием современных технологий и материалов', 3200.00, 60)
+            ]
+            cursor.executemany('''
+            INSERT INTO services (title, description, price, duration)
+            VALUES (?, ?, ?, ?)
+            ''', default_services)
+            conn.commit()
+            print("Default services inserted")
+        
+        cursor.execute('''
+        SELECT id, title, description, price, duration, created_at
+        FROM services
+        ORDER BY title
+        ''')
+        
+        services = cursor.fetchall()
+        print(f"Found {len(services)} services")
+        
+        result = [{
+            "id": service[0],
+            "title": service[1],
+            "description": service[2],
+            "price": service[3],
+            "duration": service[4],
+            "created_at": service[5]
+        } for service in services]
+        
+        print("=== END GET SERVICES ===\n")
+        return result
+        
+    except sqlite3.Error as e:
+        print(f"SQLite error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception as e:
+        print(f"Unexpected error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
     finally:
         conn.close() 
