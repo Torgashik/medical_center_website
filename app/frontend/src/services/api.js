@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:8001';
+const API_URL = 'http://78.24.223.206:8001';
 
 const handleResponse = async (response) => {
     if (!response.ok) {
